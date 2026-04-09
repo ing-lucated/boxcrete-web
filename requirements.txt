@@ -1,0 +1,19 @@
+# BOxCrete Web App — Python dependencies
+# Install with: pip install -r requirements.txt
+
+flask>=3.0
+numpy>=1.24
+pandas>=2.0
+scipy>=1.11
+
+# ── Optional: real BOxCrete model (requires PyTorch) ──
+# Uncomment the lines below if you have a CUDA-capable machine or are OK with CPU:
+# torch>=2.0
+# gpytorch>=1.11
+# botorch>=0.9
+# git+https://github.com/facebookresearch/SustainableConcrete.git
+
+# ── Optional: Jupyter notebooks ──
+# jupyter
+# matplotlib
+# plotly
