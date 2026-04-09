@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOxCrete — Sustainable Concrete Design</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens ──────────────────────────────────────── */
+:root {
+  --bg:         #0d1117;
+  --surface:    #161b22;
+  --surface2:   #1e2730;
+  --border:     #30363d;
+  --accent:     #3fb950;
+  --accent2:    #58a6ff;
+  --warn:       #f0883e;
+  --text:       #e6edf3;
+  --muted:      #8b949e;
+  --danger:     #f85149;
+  --radius:     10px;
+  --mono:       'Space Mono', monospace;
+  --sans:       'DM Sans', sans-serif;
+}
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+  position: sticky; top: 0;
+  background: rgba(13,17,23,.92);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex; align-items: center; gap: 12px;
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 14px; font-weight: 700;
+  color: #0d1117;
+}
+.logo-text {
+  font-family: var(--mono);
+  font-size: 18px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.logo-text span { color: var(--accent); }
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+{% if use_boxcrete %}
+.badge { border-color: var(--accent); color: var(--accent); }
+{% endif %}
+
+/* ── Main grid ───────────────────────────────────────────── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 28px;
+  padding: 32px 0 60px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Panel ───────────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.panel-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-title::before {
+  content: '';
+  width: 3px; height: 12px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* ── Form inputs ──────────────────────────────────────────── */
+.form-section {
+  margin-bottom: 20px;
+}
+.section-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.field {
+  margin-bottom: 12px;
+}
+.field label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.field label span {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent2);
+}
+.field input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 4px;
+}
+.val-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.val-input {
+  width: 80px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 4px 8px;
+  text-align: right;
+}
+.val-input:focus { outline: none; border-color: var(--accent); }
+.unit { font-size: 11px; color: var(--muted); }
+
+/* ── Binder bar ───────────────────────────────────────────── */
+.binder-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface2);
+  overflow: hidden;
+  display: flex;
+  margin: 14px 0 6px;
+}
+.binder-bar div { transition: width .3s ease; height: 100%; }
+.b-cement    { background: #58a6ff; }
+.b-flyash    { background: #f0883e; }
+.b-slag      { background: #3fb950; }
+.b-silica    { background: #d2a8ff; }
+.binder-legend {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.bleg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.bleg i { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ── Predict button ───────────────────────────────────────── */
+.btn-predict {
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px;
+  background: var(--accent);
+  color: #0d1117;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-predict:hover { opacity: .9; }
+.btn-predict:active { transform: scale(.98); }
+.btn-predict.loading::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,.15) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1s infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ── Metrics row ──────────────────────────────────────────── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) { .metrics { grid-template-columns: repeat(2,1fr); } }
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-align: center;
+  transition: border-color .3s;
+}
+.metric.highlight { border-color: var(--accent); }
+.metric-val {
+  font-family: var(--mono);
+  font-size: 24px; font-weight: 700;
+  color: var(--text);
+}
+.metric-val span { font-size: 13px; color: var(--muted); margin-left: 2px; }
+.metric-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Chart container ──────────────────────────────────────── */
+.chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  position: relative;
+}
+.chart-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+canvas { max-height: 360px; }
+
+/* ── GWP section ──────────────────────────────────────────── */
+.gwp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.gwp-card {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.gwp-card h4 {
+  font-size: 11px; font-family: var(--mono);
+  color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 8px;
+}
+.gwp-val {
+  font-family: var(--mono);
+  font-size: 28px; font-weight: 700;
+}
+.gwp-val.good  { color: var(--accent); }
+.gwp-val.avg   { color: var(--warn); }
+.gwp-val.bad   { color: var(--danger); }
+.gwp-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── SCM insight ──────────────────────────────────────────── */
+.insight {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(63,185,80,.08);
+  border-left: 3px solid var(--accent);
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.insight strong { color: var(--text); }
+
+/* ── Model tag ────────────────────────────────────────────── */
+.model-tag {
+  font-size: 11px; font-family: var(--mono);
+  color: var(--muted); margin-top: 10px;
+  text-align: right;
+}
+
+/* ── Placeholder overlay ──────────────────────────────────── */
+.placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 380px;
+  color: var(--muted);
+  gap: 12px;
+}
+.placeholder svg { opacity: .3; }
+.placeholder p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="shell header-inner">
+    <div class="logo">
+      <div class="logo-icon">Bx</div>
+      <div class="logo-text">BOx<span>Crete</span></div>
+    </div>
+    <div class="badge">
+      {% if use_boxcrete %}✓ BOxCrete GP model{% else %}⚡ Surrogate GP model{% endif %}
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="main-grid">
+
+    <!-- ── LEFT: Input panel ──────────────────────────────── -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Composizione Mix</div>
+
+        <!-- Binder breakdown bar -->
+        <div class="binder-bar">
+          <div class="b-cement" id="bar-cement"></div>
+          <div class="b-flyash" id="bar-flyash"></div>
+          <div class="b-slag"   id="bar-slag"></div>
+          <div class="b-silica" id="bar-silica"></div>
+        </div>
+        <div class="binder-legend">
+          <div class="bleg"><i style="background:#58a6ff"></i>Cemento</div>
+          <div class="bleg"><i style="background:#f0883e"></i>Fly Ash</div>
+          <div class="bleg"><i style="background:#3fb950"></i>Scoria</div>
+          <div class="bleg"><i style="background:#d2a8ff"></i>Silice</div>
+        </div>
+
+        <!-- Binder section -->
+        <div class="form-section" style="margin-top:18px">
+          <div class="section-label">Leganti (kg/m³)</div>
+
+          <div class="field">
+            <label>Cemento Portland <span id="lbl-cement">350</span></label>
+            <input type="range" min="0" max="600" step="5" value="350" id="r-cement" oninput="sync('cement',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-cement" value="350" oninput="sync('cement',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Fly Ash (ceneri volanti) <span id="lbl-fly_ash">0</span></label>
+            <input type="range" min="0" max="400" step="5" value="0" id="r-fly_ash" oninput="sync('fly_ash',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-fly_ash" value="0" oninput="sync('fly_ash',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Scoria GGBS <span id="lbl-slag">0</span></label>
+            <input type="range" min="0" max="400" step="5" value="0" id="r-slag" oninput="sync('slag',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-slag" value="0" oninput="sync('slag',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Silice Attiva <span id="lbl-silica_fume">0</span></label>
+            <input type="range" min="0" max="60" step="1" value="0" id="r-silica_fume" oninput="sync('silica_fume',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-silica_fume" value="0" oninput="sync('silica_fume',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Water + Aggregates -->
+        <div class="form-section">
+          <div class="section-label">Acqua &amp; Aggregati (kg/m³)</div>
+
+          <div class="field">
+            <label>Acqua <span id="lbl-water">175</span></label>
+            <input type="range" min="100" max="280" step="5" value="175" id="r-water" oninput="sync('water',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-water" value="175" oninput="sync('water',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Aggregato Fine (sabbia) <span id="lbl-aggregate_fine">750</span></label>
+            <input type="range" min="0" max="1200" step="10" value="750" id="r-aggregate_fine" oninput="sync('aggregate_fine',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-aggregate_fine" value="750" oninput="sync('aggregate_fine',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Aggregato Grosso (ghiaia) <span id="lbl-aggregate_coarse">1000</span></label>
+            <input type="range" min="0" max="1400" step="10" value="1000" id="r-aggregate_coarse" oninput="sync('aggregate_coarse',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-aggregate_coarse" value="1000" oninput="sync('aggregate_coarse',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Additivo (superfluidificante) <span id="lbl-admixture">0</span></label>
+            <input type="range" min="0" max="20" step="0.5" value="0" id="r-admixture" oninput="sync('admixture',this.value)">
+            <div class="val-row">
+              <input class="val-input" type="number" id="v-admixture" value="0" oninput="sync('admixture',this.value)">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-predict" id="btn-predict" onclick="predict()">
+          ▶ CALCOLA PREVISIONE
+        </button>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Results ─────────────────────────────────── -->
+    <div>
+
+      <!-- Milestone metrics -->
+      <div class="metrics">
+        <div class="metric" id="m-1d">
+          <div class="metric-val">—<span>MPa</span></div>
+          <div class="metric-lbl">Resistenza 1 giorno</div>
+        </div>
+        <div class="metric highlight" id="m-28d">
+          <div class="metric-val">—<span>MPa</span></div>
+          <div class="metric-lbl">Resistenza 28 giorni</div>
+        </div>
+        <div class="metric" id="m-90d">
+          <div class="metric-val">—<span>MPa</span></div>
+          <div class="metric-lbl">Resistenza 90 giorni</div>
+        </div>
+        <div class="metric" id="m-gwp">
+          <div class="metric-val">—<span>kg</span></div>
+          <div class="metric-lbl">GWP CO₂-eq / m³</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrap">
+        <div class="chart-header">
+          <div class="panel-title" style="margin:0">Curva di Resistenza nel Tempo</div>
+          <div id="model-tag" class="model-tag"></div>
+        </div>
+        <div id="placeholder" class="placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-10"/>
+          </svg>
+          <p>Inserisci il mix e premi Calcola</p>
+        </div>
+        <canvas id="strengthChart" style="display:none"></canvas>
+      </div>
+
+      <!-- GWP + SCM insight -->
+      <div class="gwp-row">
+        <div class="gwp-card">
+          <h4>Global Warming Potential</h4>
+          <div class="gwp-val" id="gwp-val">—</div>
+          <div class="gwp-sub" id="gwp-sub">kg CO₂-eq per m³ di calcestruzzo</div>
+        </div>
+        <div class="gwp-card">
+          <h4>Sostituzione Legante</h4>
+          <div class="gwp-val" id="scm-val" style="color:var(--accent2)">—</div>
+          <div class="gwp-sub" id="scm-sub">% SCM sul totale legante</div>
+        </div>
+      </div>
+
+      <div class="insight" id="insight" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+const vals = {
+  cement: 350, fly_ash: 0, slag: 0, silica_fume: 0,
+  water: 175, aggregate_fine: 750, aggregate_coarse: 1000, admixture: 0
+};
+let chart = null;
+
+// ── Sync sliders / number inputs ─────────────────────────────
+function sync(key, raw) {
+  const v = parseFloat(raw) || 0;
+  vals[key] = v;
+  const r = document.getElementById('r-' + key);
+  const n = document.getElementById('v-' + key);
+  const l = document.getElementById('lbl-' + key);
+  if (r) r.value = v;
+  if (n) n.value = v;
+  if (l) l.textContent = v;
+  updateBinderBar();
+}
+
+function updateBinderBar() {
+  const total = vals.cement + vals.fly_ash + vals.slag + vals.silica_fume || 1;
+  document.getElementById('bar-cement').style.width = (vals.cement / total * 100) + '%';
+  document.getElementById('bar-flyash').style.width = (vals.fly_ash / total * 100) + '%';
+  document.getElementById('bar-slag').style.width   = (vals.slag   / total * 100) + '%';
+  document.getElementById('bar-silica').style.width = (vals.silica_fume / total * 100) + '%';
+}
+
+// ── Predict ──────────────────────────────────────────────────
+async function predict() {
+  const btn = document.getElementById('btn-predict');
+  btn.classList.add('loading');
+  btn.textContent = 'Calcolo in corso…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(vals)
+    });
+    const d = await res.json();
+    renderResults(d);
+  } catch(e) {
+    alert('Errore nella chiamata al server: ' + e.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.textContent = '▶ CALCOLA PREVISIONE';
+    btn.disabled = false;
+  }
+}
+
+// ── Render results ───────────────────────────────────────────
+function renderResults(d) {
+  // Milestones
+  setMetric('m-1d',  d.milestones['1d'],  'MPa', 'Resistenza 1 giorno');
+  setMetric('m-28d', d.milestones['28d'], 'MPa', 'Resistenza 28 giorni');
+  setMetric('m-90d', d.milestones['90d'], 'MPa', 'Resistenza 90 giorni');
+  setMetric('m-gwp', d.gwp, 'kg', 'GWP CO₂-eq / m³');
+
+  // GWP card
+  const gwpEl = document.getElementById('gwp-val');
+  gwpEl.textContent = d.gwp;
+  gwpEl.className = 'gwp-val ' + gwpClass(d.gwp);
+
+  // SCM card
+  document.getElementById('scm-val').textContent = d.scm_pct + '%';
+  document.getElementById('scm-sub').textContent =
+    `Legante totale: ${d.binder_total} kg/m³`;
+
+  // Model tag
+  document.getElementById('model-tag').textContent = '🔬 ' + d.model;
+
+  // Chart
+  document.getElementById('placeholder').style.display = 'none';
+  const canvas = document.getElementById('strengthChart');
+  canvas.style.display = 'block';
+  renderChart(d);
+
+  // Insight
+  renderInsight(d);
+}
+
+function setMetric(id, val, unit, lbl) {
+  const el = document.getElementById(id);
+  el.innerHTML = `
+    <div class="metric-val">${val}<span> ${unit}</span></div>
+    <div class="metric-lbl">${lbl}</div>`;
+}
+
+function gwpClass(v) {
+  if (v < 200) return 'good';
+  if (v < 350) return 'avg';
+  return 'bad';
+}
+
+function renderChart(d) {
+  const ctx = document.getElementById('strengthChart').getContext('2d');
+
+  // Gradient fill
+  const gradientFill = ctx.createLinearGradient(0, 0, 0, 360);
+  gradientFill.addColorStop(0, 'rgba(63,185,80,.25)');
+  gradientFill.addColorStop(1, 'rgba(63,185,80,0)');
+
+  const ciGrad = ctx.createLinearGradient(0, 0, 0, 360);
+  ciGrad.addColorStop(0, 'rgba(63,185,80,.08)');
+  ciGrad.addColorStop(1, 'rgba(63,185,80,.01)');
+
+  const datasets = [
+    {
+      label: 'IC 95% sup.',
+      data: d.upper_ci,
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: '+1',
+      backgroundColor: ciGrad,
+      tension: 0.4,
+    },
+    {
+      label: 'Resistenza media (MPa)',
+      data: d.strengths,
+      borderColor: '#3fb950',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      backgroundColor: gradientFill,
+      fill: true,
+      tension: 0.4,
+    },
+    {
+      label: 'IC 95% inf.',
+      data: d.lower_ci,
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: '-1',
+      backgroundColor: ciGrad,
+      tension: 0.4,
+    },
+  ];
+
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: d.time_points, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#8b949e', font: { family: 'DM Sans', size: 12 },
+            filter: i => i.text.includes('media')
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1e2730',
+          borderColor: '#30363d',
+          borderWidth: 1,
+          titleColor: '#e6edf3',
+          bodyColor: '#8b949e',
+          callbacks: {
+            title: items => `Età: ${items[0].label} giorni`,
+            label: item => {
+              if (item.datasetIndex === 1)
+                return ` Resistenza: ${item.raw} MPa`;
+              return null;
+            },
+            afterBody: items => {
+              const i = items[0].dataIndex;
+              return [
+                ` IC 95%: [${d.lower_ci[i]} – ${d.upper_ci[i]}] MPa`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Giorni di maturazione', color: '#8b949e' },
+          grid: { color: 'rgba(48,54,61,.6)' },
+          ticks: {
+            color: '#8b949e',
+            callback: (v, i) => [1,7,14,28,56,90].includes(d.time_points[i]) ? d.time_points[i] : ''
+          }
+        },
+        y: {
+          title: { display: true, text: 'Resistenza a compressione (MPa)', color: '#8b949e' },
+          grid: { color: 'rgba(48,54,61,.6)' },
+          ticks: { color: '#8b949e' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  // Draw vertical lines at 7d and 28d
+  const plugin = {
+    id: 'vlines',
+    afterDraw(chart) {
+      const { ctx, scales: {x, y} } = chart;
+      [7, 28].forEach(day => {
+        const xi = chart.data.labels.indexOf(day);
+        if (xi < 0) return;
+        const xp = x.getPixelForValue(day);
+        ctx.save();
+        ctx.setLineDash([4,4]);
+        ctx.strokeStyle = day === 28 ? 'rgba(63,185,80,.5)' : 'rgba(88,166,255,.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(xp, y.top);
+        ctx.lineTo(xp, y.bottom);
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+  };
+  chart.config.plugins = chart.config.plugins || [];
+  if (!chart.config.plugins.find(p => p.id === 'vlines'))
+    chart.config.plugins.push(plugin);
+  chart.update();
+}
+
+function renderInsight(d) {
+  const el = document.getElementById('insight');
+  const s28 = d.milestones['28d'];
+  const scm = d.scm_pct;
+  const gwp = d.gwp;
+
+  let cls = '';
+  if (s28 >= 45) cls = 'C40/50+';
+  else if (s28 >= 35) cls = 'C30/37';
+  else if (s28 >= 25) cls = 'C20/25';
+  else cls = 'inferiore a C20';
+
+  let msg = `<strong>Resistenza 28d: ${s28} MPa</strong> → classe indicativa <strong>${cls}</strong>. `;
+
+  if (scm >= 50)
+    msg += `Con <strong>${scm}% di SCM</strong>, il GWP è ridotto a <strong>${gwp} kg CO₂/m³</strong> rispetto a ~280–350 di un CEM I puro. Eccellente profilo di sostenibilità.`;
+  else if (scm >= 20)
+    msg += `La sostituzione parziale (${scm}%) abbassa il GWP del ~${Math.round((1 - gwp/310)*100)}% rispetto al cemento puro. Ulteriore incremento di fly ash o scoria potrebbe migliorare la sostenibilità.`;
+  else
+    msg += `Mix ad alto cemento: GWP elevato (${gwp} kg CO₂/m³). Considera di sostituire parte del cemento con fly ash o scoria GGBS per ridurre le emissioni.`;
+
+  el.innerHTML = msg;
+  el.style.display = 'block';
+}
+
+// Init
+updateBinderBar();
+</script>
+</body>
+</html>
